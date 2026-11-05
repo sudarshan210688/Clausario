@@ -1,0 +1,11 @@
+File a Claim
+
+As a policyholder
+I want to submit an insurance claim online with supporting documents
+So that I don't have to visit an office to start the claims process
+
+Acceptance Criteria:
+- Given I have an active policy, when I select "File a Claim," then I can enter incident details and upload documents (photos, bills, FIR, etc.)
+- Given I submit a claim, when it's received, then I get a claim reference number and confirmation via SMS/email
+- Given required documents are missing, when I try to submit, then the system flags missing fields before allowing submission
+- Given a claim is submitted, when I check status later, then I can track it (Submitted -> Under Review -> Approved/Rejected)

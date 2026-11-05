@@ -1,0 +1,10 @@
+Check Account Balance
+
+As a bank customer
+I want to view my real-time account balance
+So that I know my available funds before making decisions
+
+Acceptance Criteria:
+- Given I'm logged in, when I open the "Accounts" tab, then my current balance and available balance (post-holds) are displayed
+- Given I have multiple accounts, when I view the dashboard, then balances for all linked accounts are shown separately
+- Given the balance fails to load, when there's a network/service error, then a retry option and last-synced timestamp are shown instead of a blank/incorrect value

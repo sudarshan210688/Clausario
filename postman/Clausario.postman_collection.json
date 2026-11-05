@@ -1,0 +1,3775 @@
+{
+  "info": {
+    "name": "Clausario",
+    "description": "Clausario backend API. LEARNING PROJECT ONLY. Use with the Clausario Local environment: set baseUrl, adminUsername, adminPassword and testerPassword. Run folders in order: Auth logs in and the cookie is reused by later folders.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('body status is ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET unknown route",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('body has error', () => pm.expect(pm.response.json().error).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/nope",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "nope"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "Log in first: every route except health and login needs the clausario_session cookie (Postman keeps it in its cookie jar). Set adminUsername / adminPassword in the environment.",
+      "item": [
+        {
+          "name": "POST login — wrong password — 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('generic message', () => pm.expect(pm.response.json().error).to.eql('Invalid username or password'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"wrong-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET me — no cookie yet — 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST login — admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('session cookie is set', () => pm.expect(pm.cookies.has('clausario_session')).to.be.true);",
+                  "pm.test('no password hash in the body', () => pm.expect(pm.response.text()).to.not.include('passwordHash'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const me = pm.response.json();",
+                  "pm.test('Admin role', () => pm.expect(me.user.role).to.eql('Admin'));",
+                  "pm.test('Admin has all 8 menus', () => pm.expect(me.menus.map((m) => m.key)).to.have.length(8));",
+                  "pm.collectionVariables.set('adminId', me.user.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Config",
+      "item": [
+        {
+          "name": "GET config",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const c = pm.response.json();",
+                  "pm.test('engines per stage', () => ['route','select','review','eval'].forEach((s) => pm.expect(['decisions','jev']).to.include(c.engines.stages[s])));",
+                  "pm.test('review threshold 0-100', () => pm.expect(c.review.threshold).to.be.within(0, 100));",
+                  "pm.test('no secrets', () => pm.expect(pm.response.text()).to.not.match(/API_KEY|sk-|JWT/));",
+                  "const p = c.generation.providers[0]; if (p) { pm.collectionVariables.set('runProvider', p.id); pm.collectionVariables.set('runModel', p.default); }",
+                  "pm.collectionVariables.set('jevKeyed', String(c.engines.available.some((a) => a.id === 'jev' && a.keyed)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/config",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "config"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET providers (groq listed when keyed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('providers array', () => pm.expect(pm.response.json().providers).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/llm/providers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "llm",
+                "providers"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (Admin)",
+      "description": "Users live in the Qdrant users collection. No delete: deactivate instead.",
+      "item": [
+        {
+          "name": "GET users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('no hashes', () => pm.expect(pm.response.text()).to.not.include('passwordHash'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST create tester",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const u = pm.response.json().user;",
+                  "pm.test('menus saved', () => pm.expect(u.menus).to.eql(['overview','analyze','runs']));",
+                  "pm.collectionVariables.set('testerId', u.id); pm.collectionVariables.set('testerUsername', u.username);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"pm-tester-{{$timestamp}}\",\n  \"password\": \"{{testerPassword}}\",\n  \"role\": \"Tester\",\n  \"menus\": [\n    \"overview\",\n    \"analyze\",\n    \"runs\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST create duplicate — 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{testerUsername}}\",\n  \"password\": \"{{testerPassword}}\",\n  \"role\": \"Tester\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST create — short password — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"pm-short\",\n  \"password\": \"short\",\n  \"role\": \"Tester\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PATCH tester menus",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('knowledge granted', () => pm.expect(pm.response.json().user.menus).to.include('knowledge'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{testerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{testerId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menus\": [\n    \"overview\",\n    \"analyze\",\n    \"runs\",\n    \"knowledge\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PATCH demote self — 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{adminId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{adminId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"Tester\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE user — no such route — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{testerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{testerId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Menu access (Admin)",
+      "item": [
+        {
+          "name": "GET menus",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('8 menu items', () => pm.expect(pm.response.json().menus).to.have.length(8));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "menus"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET access",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('rows have menus', () => pm.response.json().access.forEach((r) => pm.expect(r.menus).to.be.an('array')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/access",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "access"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT tester access",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('saved', () => pm.expect(pm.response.json().access.menus).to.eql(['overview','analyze','runs']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/access/{{testerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "access",
+                "{{testerId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menus\": [\n    \"overview\",\n    \"analyze\",\n    \"runs\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT admin access — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/access/{{adminId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "access",
+                "{{adminId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menus\": [\n    \"overview\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Engines (Decisions / Jev)",
+      "description": "Per-call engine override (needs ENGINE_UI_SWITCH=true and the engine's key).",
+      "item": [
+        {
+          "name": "POST route — Example 1 on Decisions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('engine decisions', () => pm.expect(pm.response.json().usage.engine).to.eql('decisions'));",
+                  "pm.test('gdpr', () => pm.expect(pm.response.json().regulations).to.eql(['gdpr']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyze/route",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyze",
+                "route"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"engine\": \"decisions\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST route — Example 2 on Jev",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('jevKeyed') !== 'true') { pm.test('Jev not keyed → 400', () => pm.response.to.have.status(400)); return; }",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('engine jev', () => pm.expect(pm.response.json().usage.engine).to.eql('jev'));",
+                  "pm.test('both regulations', () => pm.expect(pm.response.json().regulations).to.eql(['gdpr','eu-ai-act']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyze/route",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyze",
+                "route"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"The hiring portal uses an ML model to screen CVs and rank candidates automatically.\",\n  \"engine\": \"jev\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST route — unknown engine — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyze/route",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyze",
+                "route"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"engine\": \"llm\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OKF Read",
+      "description": "Read endpoints over the in-memory knowledge snapshot (loaded at startup, reloaded after scrapes that change files). Requires both bundles to be scraped first.",
+      "item": [
+        {
+          "name": "GET gdpr index",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('10 chapters', () => pm.expect(body.chapters).to.have.length(10));",
+                  "pm.test('Ch. III lists art-012…art-023', () => {",
+                  "  const ch3 = body.chapters.find((c) => c.id === 'gdpr:ch-03');",
+                  "  pm.expect(ch3.articles.map((a) => a.id)).to.eql(Array.from({ length: 12 }, (_, i) => `gdpr:art-0${12 + i}`));",
+                  "});",
+                  "pm.test('every article has a description', () => body.chapters.forEach((c) => c.articles.forEach((a) => pm.expect(a.description).to.be.a('string').and.not.empty)));",
+                  "pm.test('recitals listed, no annexes', () => { pm.expect(body.recitals.length).to.be.above(0); pm.expect(body.annexes).to.eql([]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/gdpr/index",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "gdpr",
+                "index"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET eu-ai-act index",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('10 chapters', () => pm.expect(body.chapters).to.have.length(10));",
+                  "pm.test('Ch. I includes inserted art-004a', () => pm.expect(body.chapters[0].articles.map((a) => a.id)).to.include('eu-ai-act:art-004a'));",
+                  "pm.test('annexes I–X in numeral order', () => pm.expect(body.annexes.map((a) => a.id.split(':')[1])).to.eql(['i','ii','iii','iv','v','vi','vii','viii','ix','x'].map((r) => `annex-${r}`)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/eu-ai-act/index",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "eu-ai-act",
+                "index"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET gdpr article 17",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('frontmatter is Art. 17', () => { pm.expect(body.frontmatter.type).to.eql('Article'); pm.expect(body.frontmatter.article).to.eql(17); });",
+                  "pm.test('edges include gdpr:rec-065 and chapter gdpr:ch-03', () => { pm.expect(body.edges.recitals).to.include('gdpr:rec-065'); pm.expect(body.edges.chapter).to.eql('gdpr:ch-03'); });",
+                  "pm.test('body has # Text with 17(1) anchor', () => pm.expect(body.body).to.include('## 17(1)'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/gdpr/articles/17",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "gdpr",
+                "articles",
+                "17"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET eu-ai-act article 4a (inserted)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('article ref is \"4a\" in Ch. I', () => { const b = pm.response.json(); pm.expect(b.frontmatter.article).to.eql('4a'); pm.expect(b.edges.chapter).to.eql('eu-ai-act:ch-01'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/eu-ai-act/articles/4a",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "eu-ai-act",
+                "articles",
+                "4a"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET article 999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('error names the id', () => pm.expect(pm.response.json().error).to.include('gdpr:art-999'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/gdpr/articles/999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "gdpr",
+                "articles",
+                "999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET article abc — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Zod issues included', () => pm.expect(pm.response.json().issues).to.be.an('array').that.is.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/gdpr/articles/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "gdpr",
+                "articles",
+                "abc"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET unknown reg index — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Zod issues included', () => pm.expect(pm.response.json().issues).to.be.an('array').that.is.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/foo/index",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "foo",
+                "index"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET log (gdpr, limit 5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const { entries } = pm.response.json();",
+                  "pm.test('at most 5 entries', () => pm.expect(entries.length).to.be.within(1, 5));",
+                  "pm.test('entries are { date, line }, newest date first', () => {",
+                  "  entries.forEach((e) => { pm.expect(e.date).to.match(/^\\d{4}-\\d{2}-\\d{2}$/); pm.expect(e.line).to.be.a('string').and.not.empty; });",
+                  "  const dates = entries.map((e) => e.date);",
+                  "  pm.expect(dates).to.eql([...dates].sort().reverse());",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/log?reg=gdpr&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "log"
+              ],
+              "query": [
+                {
+                  "key": "reg",
+                  "value": "gdpr"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET log (root, default limit)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('root summaries (≤50)', () => { const { entries } = pm.response.json(); pm.expect(entries.length).to.be.within(1, 50); pm.expect(entries[0].line).to.match(/^scrape /); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/log",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "log"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET log limit 0 — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/log?limit=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "log"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analyze",
+      "item": [
+        {
+          "name": "POST route — Example 1 (GDPR only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('probabilities in 0–1', () => { for (const p of Object.values(r.probabilities)) pm.expect(p).to.be.within(0, 1); });",
+                  "pm.test('needsReview is boolean', () => pm.expect(r.needsReview).to.be.a('boolean'));",
+                  "pm.test('routes to gdpr only', () => pm.expect(r.regulations).to.eql(['gdpr']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyze/route",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyze",
+                "route"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST route — Example 2 (both)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('probabilities in 0–1', () => { for (const p of Object.values(r.probabilities)) pm.expect(p).to.be.within(0, 1); });",
+                  "pm.test('needsReview is boolean', () => pm.expect(r.needsReview).to.be.a('boolean'));",
+                  "pm.test('routes to both', () => pm.expect(r.regulations).to.eql(['gdpr', 'eu-ai-act']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyze/route",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyze",
+                "route"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"The hiring portal uses an ML model to screen CVs and rank candidates automatically.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST select — Example 1 (gdpr)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const ids = r.selected.map((a) => a.id);",
+                  "pm.test('selects gdpr:art-017', () => pm.expect(ids).to.include('gdpr:art-017'));",
+                  "pm.test('expansion includes gdpr:rec-065', () => pm.expect(r.expansion.recitals.map((x) => x.id)).to.include('gdpr:rec-065'));",
+                  "pm.test('at most 8 (SELECT_TOP_N default), all gdpr', () => { pm.expect(ids.length).to.be.within(1, 8); r.selected.forEach((a) => pm.expect(a.regulation).to.eql('gdpr')); });",
+                  "pm.test('sorted by p desc', () => r.selected.forEach((a, i) => i && pm.expect(a.p).to.be.at.most(r.selected[i - 1].p)));",
+                  "pm.test('chapters asked: 10 gdpr', () => pm.expect(r.chapters).to.have.lengthOf(10));",
+                  "pm.collectionVariables.set('articleIds', JSON.stringify(ids));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyze/select",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyze",
+                "select"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"regulations\": [\n    \"gdpr\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST select — empty story — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('issue on story', () => pm.expect(pm.response.json().issues[0].path).to.eql(['story']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyze/select",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyze",
+                "select"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"\",\n  \"regulations\": [\n    \"gdpr\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Scenarios",
+      "item": [
+        {
+          "name": "GET providers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('only known providers, each with models and default = first', () => r.providers.forEach((p) => { pm.expect(['openai', 'anthropic', 'inception']).to.include(p.id); pm.expect(p.models.length).to.be.at.least(1); pm.expect(p.default).to.eql(p.models[0]); }));",
+                  "for (const id of ['openai', 'anthropic', 'inception']) pm.collectionVariables.set(id + 'Model', (r.providers.find((p) => p.id === id) || {}).default || '');",
+                  "const listed = r.providers.map((p) => p.id);",
+                  "pm.collectionVariables.set('unkeyedProvider', ['inception', 'anthropic', 'openai'].find((id) => !listed.includes(id)) || 'inception');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/llm/providers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "llm",
+                "providers"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST generate — openai (Example 1, count 5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const configured = !!pm.collectionVariables.get('openaiModel');",
+                  "if (!configured) {",
+                  "  pm.test('openai not configured → 400', () => pm.response.to.have.status(400));",
+                  "} else {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  const r = pm.response.json();",
+                  "  pm.test('exactly 5 scenarios, TS-001…TS-005', () => pm.expect(r.scenarios.map((s) => s.id)).to.eql(['TS-001', 'TS-002', 'TS-003', 'TS-004', 'TS-005']));",
+                  "  pm.test('each selected article cited', () => [17, 12, 5].forEach((n) => pm.expect(r.scenarios.some((s) => s.mappedClauses.some((c) => new RegExp('^Art\\. ' + n + '[(\\s]').test(c))), 'Art. ' + n).to.be.true));",
+                  "  pm.test('scenario shape', () => r.scenarios.forEach((s) => { pm.expect(['High', 'Medium', 'Low']).to.include(s.priority); pm.expect(s.steps.length).to.be.within(2, 10); pm.expect(s.prerequisites.length).to.be.at.least(1); }));",
+                  "  pm.test('totalTokens ≤ budget', () => pm.expect(r.packManifest.totalTokens).to.be.at.most(r.packManifest.budget));",
+                  "  pm.test('invalidClauses is an array', () => pm.expect(r.invalidClauses).to.be.an('array'));",
+                  "  pm.collectionVariables.set('scenarios', JSON.stringify(r.scenarios));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"articleIds\": [\"gdpr:art-017\",\"gdpr:art-012\",\"gdpr:art-005\"],\n  \"provider\": \"openai\",\n  \"model\": \"{{openaiModel}}\",\n  \"count\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST generate — anthropic (Example 1, count 5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const configured = !!pm.collectionVariables.get('anthropicModel');",
+                  "if (!configured) {",
+                  "  pm.test('anthropic not configured → 400', () => pm.response.to.have.status(400));",
+                  "} else {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  const r = pm.response.json();",
+                  "  pm.test('exactly 5 scenarios, TS-001…TS-005', () => pm.expect(r.scenarios.map((s) => s.id)).to.eql(['TS-001', 'TS-002', 'TS-003', 'TS-004', 'TS-005']));",
+                  "  pm.test('each selected article cited', () => [17, 12, 5].forEach((n) => pm.expect(r.scenarios.some((s) => s.mappedClauses.some((c) => new RegExp('^Art\\. ' + n + '[(\\s]').test(c))), 'Art. ' + n).to.be.true));",
+                  "  pm.test('scenario shape', () => r.scenarios.forEach((s) => { pm.expect(['High', 'Medium', 'Low']).to.include(s.priority); pm.expect(s.steps.length).to.be.within(2, 10); pm.expect(s.prerequisites.length).to.be.at.least(1); }));",
+                  "  pm.test('totalTokens ≤ budget', () => pm.expect(r.packManifest.totalTokens).to.be.at.most(r.packManifest.budget));",
+                  "  pm.test('invalidClauses is an array', () => pm.expect(r.invalidClauses).to.be.an('array'));",
+                  "  pm.collectionVariables.set('scenarios', JSON.stringify(r.scenarios));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"articleIds\": [\"gdpr:art-017\",\"gdpr:art-012\",\"gdpr:art-005\"],\n  \"provider\": \"anthropic\",\n  \"model\": \"{{anthropicModel}}\",\n  \"count\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST generate — inception (Example 1, count 5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const configured = !!pm.collectionVariables.get('inceptionModel');",
+                  "if (!configured) {",
+                  "  pm.test('inception not configured → 400', () => pm.response.to.have.status(400));",
+                  "} else {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  const r = pm.response.json();",
+                  "  pm.test('exactly 5 scenarios, TS-001…TS-005', () => pm.expect(r.scenarios.map((s) => s.id)).to.eql(['TS-001', 'TS-002', 'TS-003', 'TS-004', 'TS-005']));",
+                  "  pm.test('each selected article cited', () => [17, 12, 5].forEach((n) => pm.expect(r.scenarios.some((s) => s.mappedClauses.some((c) => new RegExp('^Art\\. ' + n + '[(\\s]').test(c))), 'Art. ' + n).to.be.true));",
+                  "  pm.test('scenario shape', () => r.scenarios.forEach((s) => { pm.expect(['High', 'Medium', 'Low']).to.include(s.priority); pm.expect(s.steps.length).to.be.within(2, 10); pm.expect(s.prerequisites.length).to.be.at.least(1); }));",
+                  "  pm.test('totalTokens ≤ budget', () => pm.expect(r.packManifest.totalTokens).to.be.at.most(r.packManifest.budget));",
+                  "  pm.test('invalidClauses is an array', () => pm.expect(r.invalidClauses).to.be.an('array'));",
+                  "  pm.collectionVariables.set('scenarios', JSON.stringify(r.scenarios));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"articleIds\": [\"gdpr:art-017\",\"gdpr:art-012\",\"gdpr:art-005\"],\n  \"provider\": \"inception\",\n  \"model\": \"{{inceptionModel}}\",\n  \"count\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST generate — count 0 — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('count issue', () => pm.expect(pm.response.json().issues.map((i) => i.path.join('.'))).to.include('count'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"articleIds\": [\"gdpr:art-017\",\"gdpr:art-012\",\"gdpr:art-005\"],\n  \"provider\": \"openai\",\n  \"model\": \"any\",\n  \"count\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST generate — count 51 (> SCENARIO_MAX_COUNT) — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('count issue', () => pm.expect(pm.response.json().issues.map((i) => i.path.join('.'))).to.include('count'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"articleIds\": [\"gdpr:art-017\",\"gdpr:art-012\",\"gdpr:art-005\"],\n  \"provider\": \"openai\",\n  \"model\": \"any\",\n  \"count\": 51\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST generate — unkeyed provider / unlisted model — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('names the provider or model', () => pm.expect(pm.response.json().error).to.match(/not configured|Unknown model/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"articleIds\": [\"gdpr:art-017\",\"gdpr:art-012\",\"gdpr:art-005\"],\n  \"provider\": \"{{unkeyedProvider}}\",\n  \"model\": \"not-a-model\",\n  \"count\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST generate — unknown provider — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('provider issue', () => pm.expect(pm.response.json().issues.map((i) => i.path.join('.'))).to.include('provider'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"articleIds\": [\"gdpr:art-017\",\"gdpr:art-012\",\"gdpr:art-005\"],\n  \"provider\": \"mistral\",\n  \"model\": \"any\",\n  \"count\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST evaluate — saved scenarios (Example 1)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Uses the scenarios saved by 'POST generate — openai'; falls back to a built-in sample when generate did not run.",
+                  "if (!pm.collectionVariables.get('scenarios')) pm.collectionVariables.set('scenarios', JSON.stringify([{\"id\":\"TS-001\",\"title\":\"Erasure request is completed and confirmed within one month\",\"regulation\":\"GDPR\",\"mappedClauses\":[\"Art. 17(1) GDPR\",\"Art. 12(3) GDPR\"],\"priority\":\"High\",\"prerequisites\":[\"A registered user account with profile data and orders exists\"],\"steps\":[\"Submit an account deletion request from the privacy settings\",\"Run the erasure job\",\"Query every production data store for the user identifiers\",\"Check the confirmation sent to the user and its timestamp\"],\"expectedResult\":\"No personal data of the user remains in production stores and the user is notified no later than one month after the request.\"},{\"id\":\"TS-002\",\"title\":\"Deleted account data is purged from backups after the retention window\",\"regulation\":\"GDPR\",\"mappedClauses\":[\"Art. 5(1)(e) GDPR\"],\"priority\":\"Medium\",\"prerequisites\":[\"Backup retention is configured to 35 days\",\"A deleted account exists in a backup snapshot\"],\"steps\":[\"Advance the clock past the retention window\",\"Run the backup rotation job\",\"Restore the latest backup in isolation and search for the user identifiers\"],\"expectedResult\":\"No backup older than the retention window remains and the restored backup holds no data of the deleted account.\"},{\"id\":\"TS-003\",\"title\":\"Check GDPR deletion works\",\"regulation\":\"GDPR\",\"mappedClauses\":[\"Art. 17(1) GDPR\"],\"priority\":\"Low\",\"prerequisites\":[\"App is running\"],\"steps\":[\"Open the app\",\"Check things\"],\"expectedResult\":\"It works fine.\"}]));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const sent = JSON.parse(pm.collectionVariables.get('scenarios'));",
+                  "const articleIds = [\"gdpr:art-017\",\"gdpr:art-012\",\"gdpr:art-005\"];",
+                  "pm.test('one entry per scenario, request order', () => pm.expect(r.scenarios.map((s) => s.id)).to.eql(sent.map((s) => s.id)));",
+                  "pm.test('scores in [0, 2] or null (refused)', () => r.scenarios.forEach((s) => Object.values(s.scores).forEach((v) => { if (v !== null) pm.expect(v).to.be.within(0, 2); })));",
+                  "pm.test('verdict, priorityFit and duplicateP valid', () => r.scenarios.forEach((s) => { pm.expect(['pass', 'warn', 'fail']).to.include(s.verdict); pm.expect([null, 'too_low', 'correct', 'too_high']).to.include(s.priorityFit); pm.expect(s.duplicateP).to.be.within(0, 1); }));",
+                  "pm.test('summary sums to scenario count', () => pm.expect(r.summary.pass + r.summary.warn + r.summary.fail).to.eql(sent.length));",
+                  "pm.test('every articleId exactly once in coverage', () => pm.expect([...r.coverage.covered, ...r.coverage.uncovered].sort()).to.eql([...articleIds].sort()));",
+                  "pm.test('pct in [0, 100]', () => pm.expect(r.coverage.pct).to.be.within(0, 100));",
+                  "pm.test('refusals is an array', () => pm.expect(r.refusals).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/evaluate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "evaluate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"articleIds\": [\"gdpr:art-017\",\"gdpr:art-012\",\"gdpr:art-005\"],\n  \"scenarios\": {{scenarios}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST evaluate — invalid scenario (1 step) — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('issue on scenarios.0.steps', () => pm.expect(pm.response.json().issues.map((i) => i.path.join('.'))).to.include('scenarios.0.steps'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/evaluate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "evaluate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"articleIds\": [\"gdpr:art-017\",\"gdpr:art-012\",\"gdpr:art-005\"],\n  \"scenarios\": [\n    {\n      \"id\": \"TS-001\",\n      \"title\": \"Erasure request is completed and confirmed within one month\",\n      \"regulation\": \"GDPR\",\n      \"mappedClauses\": [\n        \"Art. 17(1) GDPR\",\n        \"Art. 12(3) GDPR\"\n      ],\n      \"priority\": \"High\",\n      \"prerequisites\": [\n        \"A registered user account with profile data and orders exists\"\n      ],\n      \"steps\": [\n        \"Submit an account deletion request\"\n      ],\n      \"expectedResult\": \"No personal data of the user remains in production stores and the user is notified no later than one month after the request.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "E2E Example 1",
+      "description": "Example 1 (Architecture §1) chained: route → select → generate → evaluate. Generate/evaluate are skipped when no LLM provider is configured.",
+      "item": [
+        {
+          "name": "GET providers — pick E2E provider (Example 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const p = r.providers.find((x) => x.id === 'openai') || r.providers[0];",
+                  "pm.collectionVariables.set('e2eProvider', p ? p.id : '');",
+                  "pm.collectionVariables.set('e2eModel', p ? p.default : '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/llm/providers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "llm",
+                "providers"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST route — Example 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('routes to gdpr', () => pm.expect(r.regulations).to.eql([\"gdpr\"]));",
+                  "pm.test('needsReview is boolean', () => pm.expect(r.needsReview).to.be.a('boolean'));",
+                  "pm.collectionVariables.set('e1Regulations', JSON.stringify(r.regulations));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyze/route",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyze",
+                "route"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST select — Example 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const ids = r.selected.map((a) => a.id);",
+                  "pm.test('selects gdpr:art-017', () => pm.expect(ids).to.include('gdpr:art-017'));",
+                  "pm.test('expansion includes gdpr:rec-065', () => pm.expect(r.expansion.recitals.map((x) => x.id)).to.include('gdpr:rec-065'));",
+                  "pm.test('sorted by p desc', () => r.selected.forEach((a, i) => i && pm.expect(a.p).to.be.at.most(r.selected[i - 1].p)));",
+                  "pm.collectionVariables.set('e1ArticleIds', JSON.stringify(ids));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyze/select",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyze",
+                "select"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"regulations\": {{e1Regulations}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST generate — Example 1 (count 5)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('e2eProvider')) { console.log('No LLM provider configured: skipping'); pm.execution.skipRequest(); }",
+                  "pm.collectionVariables.unset('e1Scenarios');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('exactly 5 scenarios, TS-001…', () => pm.expect(r.scenarios.map((s) => s.id)).to.eql(Array.from({ length: 5 }, (_, i) => 'TS-' + String(i + 1).padStart(3, '0'))));",
+                  "pm.test('scenario shape', () => r.scenarios.forEach((s) => { pm.expect(['High', 'Medium', 'Low']).to.include(s.priority); pm.expect(s.steps.length).to.be.within(2, 10); pm.expect(s.prerequisites.length).to.be.at.least(1); pm.expect(s.mappedClauses.length).to.be.at.least(1); }));",
+                  "pm.test('a scenario cites Art. 17 GDPR', () => pm.expect(r.scenarios.some((s) => s.mappedClauses.some((c) => /^Art\\. 17[(\\s].* GDPR$/.test(c)))).to.be.true);",
+                  "pm.test('totalTokens ≤ budget', () => pm.expect(r.packManifest.totalTokens).to.be.at.most(r.packManifest.budget));",
+                  "pm.test('invalidClauses is an array', () => pm.expect(r.invalidClauses).to.be.an('array'));",
+                  "pm.collectionVariables.set('e1Scenarios', JSON.stringify(r.scenarios));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"articleIds\": {{e1ArticleIds}},\n  \"provider\": \"{{e2eProvider}}\",\n  \"model\": \"{{e2eModel}}\",\n  \"count\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST evaluate — Example 1",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('e1Scenarios')) { console.log('No generated scenarios: skipping'); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const sent = JSON.parse(pm.collectionVariables.get('e1Scenarios'));",
+                  "const articleIds = JSON.parse(pm.collectionVariables.get('e1ArticleIds'));",
+                  "pm.test('one verdict per scenario, request order', () => pm.expect(r.scenarios.map((s) => s.id)).to.eql(sent.map((s) => s.id)));",
+                  "pm.test('verdicts valid', () => r.scenarios.forEach((s) => pm.expect(['pass', 'warn', 'fail']).to.include(s.verdict)));",
+                  "pm.test('scores in [0, 2] or null', () => r.scenarios.forEach((s) => Object.values(s.scores).forEach((v) => { if (v !== null) pm.expect(v).to.be.within(0, 2); })));",
+                  "pm.test('summary sums to scenario count', () => pm.expect(r.summary.pass + r.summary.warn + r.summary.fail).to.eql(sent.length));",
+                  "pm.test('every articleId exactly once in coverage', () => pm.expect([...r.coverage.covered, ...r.coverage.uncovered].sort()).to.eql([...articleIds].sort()));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/evaluate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "evaluate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"articleIds\": {{e1ArticleIds}},\n  \"scenarios\": {{e1Scenarios}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "E2E Example 2",
+      "description": "Example 2 (Architecture §1) chained: route → select → generate → evaluate. Generate/evaluate are skipped when no LLM provider is configured.",
+      "item": [
+        {
+          "name": "GET providers — pick E2E provider (Example 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const p = r.providers.find((x) => x.id === 'openai') || r.providers[0];",
+                  "pm.collectionVariables.set('e2eProvider', p ? p.id : '');",
+                  "pm.collectionVariables.set('e2eModel', p ? p.default : '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/llm/providers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "llm",
+                "providers"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST route — Example 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('routes to gdpr + eu-ai-act', () => pm.expect(r.regulations).to.eql([\"gdpr\",\"eu-ai-act\"]));",
+                  "pm.test('needsReview is boolean', () => pm.expect(r.needsReview).to.be.a('boolean'));",
+                  "pm.collectionVariables.set('e2Regulations', JSON.stringify(r.regulations));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyze/route",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyze",
+                "route"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"The hiring portal uses an ML model to screen CVs and rank candidates automatically.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST select — Example 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const ids = r.selected.map((a) => a.id);",
+                  "pm.test('selects eu-ai-act:art-006', () => pm.expect(ids).to.include('eu-ai-act:art-006'));",
+                  "pm.test('selects gdpr:art-022', () => pm.expect(ids).to.include('gdpr:art-022'));",
+                  "pm.test('expansion includes eu-ai-act:annex-iii', () => pm.expect(r.expansion.annexes.map((x) => x.id)).to.include('eu-ai-act:annex-iii'));",
+                  "pm.test('sorted by p desc', () => r.selected.forEach((a, i) => i && pm.expect(a.p).to.be.at.most(r.selected[i - 1].p)));",
+                  "pm.collectionVariables.set('e2ArticleIds', JSON.stringify(ids));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyze/select",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyze",
+                "select"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"The hiring portal uses an ML model to screen CVs and rank candidates automatically.\",\n  \"regulations\": {{e2Regulations}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST generate — Example 2 (count 10)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('e2eProvider')) { console.log('No LLM provider configured: skipping'); pm.execution.skipRequest(); }",
+                  "pm.collectionVariables.unset('e2Scenarios');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('exactly 10 scenarios, TS-001…', () => pm.expect(r.scenarios.map((s) => s.id)).to.eql(Array.from({ length: 10 }, (_, i) => 'TS-' + String(i + 1).padStart(3, '0'))));",
+                  "pm.test('scenario shape', () => r.scenarios.forEach((s) => { pm.expect(['High', 'Medium', 'Low']).to.include(s.priority); pm.expect(s.steps.length).to.be.within(2, 10); pm.expect(s.prerequisites.length).to.be.at.least(1); pm.expect(s.mappedClauses.length).to.be.at.least(1); }));",
+                  "pm.test('a scenario cites a GDPR clause', () => pm.expect(r.scenarios.some((s) => s.mappedClauses.some((c) => / GDPR$/.test(c)))).to.be.true);",
+                  "pm.test('a scenario cites an EU AI Act clause', () => pm.expect(r.scenarios.some((s) => s.mappedClauses.some((c) => / EU AI Act$/.test(c)))).to.be.true);",
+                  "pm.test('totalTokens ≤ budget', () => pm.expect(r.packManifest.totalTokens).to.be.at.most(r.packManifest.budget));",
+                  "pm.test('invalidClauses is an array', () => pm.expect(r.invalidClauses).to.be.an('array'));",
+                  "pm.collectionVariables.set('e2Scenarios', JSON.stringify(r.scenarios));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"The hiring portal uses an ML model to screen CVs and rank candidates automatically.\",\n  \"articleIds\": {{e2ArticleIds}},\n  \"provider\": \"{{e2eProvider}}\",\n  \"model\": \"{{e2eModel}}\",\n  \"count\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST evaluate — Example 2",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('e2Scenarios')) { console.log('No generated scenarios: skipping'); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const sent = JSON.parse(pm.collectionVariables.get('e2Scenarios'));",
+                  "const articleIds = JSON.parse(pm.collectionVariables.get('e2ArticleIds'));",
+                  "pm.test('one verdict per scenario, request order', () => pm.expect(r.scenarios.map((s) => s.id)).to.eql(sent.map((s) => s.id)));",
+                  "pm.test('verdicts valid', () => r.scenarios.forEach((s) => pm.expect(['pass', 'warn', 'fail']).to.include(s.verdict)));",
+                  "pm.test('scores in [0, 2] or null', () => r.scenarios.forEach((s) => Object.values(s.scores).forEach((v) => { if (v !== null) pm.expect(v).to.be.within(0, 2); })));",
+                  "pm.test('summary sums to scenario count', () => pm.expect(r.summary.pass + r.summary.warn + r.summary.fail).to.eql(sent.length));",
+                  "pm.test('every articleId exactly once in coverage', () => pm.expect([...r.coverage.covered, ...r.coverage.uncovered].sort()).to.eql([...articleIds].sort()));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/evaluate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "evaluate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"The hiring portal uses an ML model to screen CVs and rank candidates automatically.\",\n  \"articleIds\": {{e2ArticleIds}},\n  \"scenarios\": {{e2Scenarios}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OKF Scrape",
+      "description": "Scrape jobs. Requests run in order: dryRun starts a job and saves {{jobId}}; the commit request then hits 409 because that job is still running. Run the commit request on its own (no active job, OPENAI_API_KEY + DESCRIPTION_MODEL set) to write the bundle; it then returns 202.",
+      "item": [
+        {
+          "name": "POST scrape gdpr (dryRun)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 202', () => pm.response.to.have.status(202));",
+                  "pm.test('returns jobId', () => pm.expect(pm.response.json().jobId).to.be.a('string').and.not.empty);",
+                  "pm.collectionVariables.set('jobId', pm.response.json().jobId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/scrape/gdpr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "scrape",
+                "gdpr"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dryRun\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET job (poll)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const job = pm.response.json();",
+                  "pm.test('job id matches', () => pm.expect(job.id).to.eql(pm.collectionVariables.get('jobId')));",
+                  "pm.test('status is valid', () => pm.expect(['queued', 'running', 'done', 'failed']).to.include(job.status));",
+                  "pm.test('progress has done/total', () => { pm.expect(job.progress.done).to.be.a('number'); pm.expect(job.progress.total).to.be.a('number'); });",
+                  "if (job.status === 'done') pm.test('result lists added/updated/skipped/redescribed', () => ['added', 'updated', 'skipped', 'redescribed'].forEach((k) => pm.expect(job.result[k]).to.be.an('array')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/jobs/{{jobId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "jobs",
+                "{{jobId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST scrape gdpr (commit) — 409 while a job runs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "  pm.test('returns jobId', () => pm.expect(pm.response.json().jobId).to.be.a('string'));",
+                  "  pm.collectionVariables.set('jobId', pm.response.json().jobId);",
+                  "} else {",
+                  "  pm.test('status 409 (job already running)', () => pm.response.to.have.status(409));",
+                  "  pm.test('body has error', () => pm.expect(pm.response.json().error).to.match(/already running/));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/scrape/gdpr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "scrape",
+                "gdpr"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dryRun\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Writes the bundle (LLM descriptions for added/updated docs). 202 when no gdpr job is active; 409 while one is."
+          }
+        },
+        {
+          "name": "POST scrape gdpr (redescribe, dryRun) — 409 while a job runs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "  pm.test('returns jobId', () => pm.expect(pm.response.json().jobId).to.be.a('string'));",
+                  "  pm.collectionVariables.set('jobId', pm.response.json().jobId);",
+                  "} else {",
+                  "  pm.test('status 409 (job already running)', () => pm.response.to.have.status(409));",
+                  "  pm.test('body has error', () => pm.expect(pm.response.json().error).to.match(/already running/));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/scrape/gdpr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "scrape",
+                "gdpr"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dryRun\": true,\n  \"redescribe\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Lists unchanged docs whose description would be rewritten from the current source (template or DESCRIPTION_MODEL). Drop dryRun to rewrite them. 202 when no gdpr job is active; 409 while one is."
+          }
+        },
+        {
+          "name": "POST scrape unsupported reg — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('has Zod issues', () => pm.expect(pm.response.json().issues).to.be.an('array').that.is.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/scrape/ccpa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "scrape",
+                "ccpa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET unknown job — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('body has error', () => pm.expect(pm.response.json().error).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/jobs/00000000-0000-0000-0000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "jobs",
+                "00000000-0000-0000-0000-000000000000"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OKF Scrape — EU AI Act",
+      "description": "EU AI Act scrape jobs (consolidated text as amended by Reg. (EU) 2026/1744; Art. 1–96 + 4a, 60a, 75a–75d; Annex I–X). Runs alongside a GDPR job (409 is per regulation). dryRun saves {{aiJobId}}; the commit request then hits 409 while that job runs — send it on its own to write the bundle (202).",
+      "item": [
+        {
+          "name": "POST scrape eu-ai-act (dryRun)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 202 (independent of a running gdpr job)', () => pm.response.to.have.status(202));",
+                  "pm.test('returns jobId', () => pm.expect(pm.response.json().jobId).to.be.a('string').and.not.empty);",
+                  "pm.collectionVariables.set('aiJobId', pm.response.json().jobId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/scrape/eu-ai-act",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "scrape",
+                "eu-ai-act"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dryRun\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET eu-ai-act job (poll)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const job = pm.response.json();",
+                  "pm.test('job is the eu-ai-act job', () => { pm.expect(job.id).to.eql(pm.collectionVariables.get('aiJobId')); pm.expect(job.reg).to.eql('eu-ai-act'); });",
+                  "pm.test('status is valid', () => pm.expect(['queued', 'running', 'done', 'failed']).to.include(job.status));",
+                  "pm.test('total covers 102 articles + 10 annexes', () => pm.expect(job.progress.total).to.be.at.least(112));",
+                  "if (job.status === 'done') pm.test('result ids are eu-ai-act ids', () => [...job.result.added, ...job.result.updated, ...job.result.skipped].forEach((id) => pm.expect(id).to.match(/^eu-ai-act:(ch-\\d{2}|art-\\d{3}[a-z]?|rec-\\d{3}|annex-[ivx]+)$/)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/jobs/{{aiJobId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "jobs",
+                "{{aiJobId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST scrape eu-ai-act (commit) — 409 while a job runs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "  pm.test('returns jobId', () => pm.expect(pm.response.json().jobId).to.be.a('string'));",
+                  "  pm.collectionVariables.set('aiJobId', pm.response.json().jobId);",
+                  "} else {",
+                  "  pm.test('status 409 (job already running)', () => pm.response.to.have.status(409));",
+                  "  pm.test('body has error', () => pm.expect(pm.response.json().error).to.match(/already running/));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/okf/scrape/eu-ai-act",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "okf",
+                "scrape",
+                "eu-ai-act"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dryRun\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Runs (LangGraph)",
+      "description": "Background runs: classify → select → review score → (human review) → generate → evaluate. Polls every 2 s.",
+      "item": [
+        {
+          "name": "POST run — Example 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 202', () => pm.response.to.have.status(202));",
+                  "pm.collectionVariables.set('runId', pm.response.json().runId); pm.collectionVariables.set('polls', 0);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"As a registered user I can request deletion of my account and all my personal data.\",\n  \"provider\": \"{{runProvider}}\",\n  \"model\": \"{{runModel}}\",\n  \"count\": 5,\n  \"evaluate\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET run — poll until settled",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const n = Number(pm.collectionVariables.get('polls') || 0); if (n > 0) setTimeout(() => {}, 2000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json(); const n = Number(pm.collectionVariables.get('polls') || 0);",
+                  "if (d.run.status === 'running' && n < 90) { pm.collectionVariables.set('polls', n + 1); pm.execution.setNextRequest(pm.info.requestName); return; }",
+                  "pm.collectionVariables.set('polls', 0);",
+                  "pm.test('settled as completed|awaiting_review', () => pm.expect([\"completed\", \"awaiting_review\"]).to.include(d.run.status));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs/{{runId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "{{runId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET runs (page 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('paged', () => pm.expect(pm.response.json()).to.include.keys('runs','total','page','pageSize'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs?page=1&pageSize=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST run — story too short — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"too short\",\n  \"provider\": \"{{runProvider}}\",\n  \"model\": \"{{runModel}}\",\n  \"count\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST retry — not failed — 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs/{{runId}}/retry",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "{{runId}}",
+                "retry"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET run — unknown id — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Review (HITL)",
+      "description": "A vague story usually scores below REVIEW_THRESHOLD and pauses for review. If it scores above, the review requests expect 409.",
+      "item": [
+        {
+          "name": "POST run — vague story",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 202', () => pm.response.to.have.status(202));",
+                  "pm.collectionVariables.set('reviewRunId', pm.response.json().runId); pm.collectionVariables.set('polls', 0);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"story\": \"Something about handling some user data in the portal, details unclear.\",\n  \"provider\": \"{{runProvider}}\",\n  \"model\": \"{{runModel}}\",\n  \"count\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET vague run — poll until settled",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const n = Number(pm.collectionVariables.get('polls') || 0); if (n > 0) setTimeout(() => {}, 2000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json(); const n = Number(pm.collectionVariables.get('polls') || 0);",
+                  "if (d.run.status === 'running' && n < 90) { pm.collectionVariables.set('polls', n + 1); pm.execution.setNextRequest(pm.info.requestName); return; }",
+                  "pm.collectionVariables.set('polls', 0);",
+                  "pm.test('settled as awaiting_review|completed|not_applicable', () => pm.expect([\"awaiting_review\", \"completed\", \"not_applicable\"]).to.include(d.run.status));",
+                  "pm.collectionVariables.set('reviewStatus', d.run.status);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs/{{reviewRunId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "{{reviewRunId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET review queue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.collectionVariables.get('reviewStatus') === 'awaiting_review') pm.test('run is queued', () => pm.expect(pm.response.json().runs.map((r) => r.id)).to.include(pm.collectionVariables.get('reviewRunId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/review/queue",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "review",
+                "queue"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST review — invalid action — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs/{{reviewRunId}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "{{reviewRunId}}",
+                "review"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"maybe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST review — approve",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const paused = pm.collectionVariables.get('reviewStatus') === 'awaiting_review';",
+                  "pm.test(paused ? 'status 202' : 'status 409 (not paused)', () => pm.response.to.have.status(paused ? 202 : 409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs/{{reviewRunId}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "{{reviewRunId}}",
+                "review"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"approve\",\n  \"note\": \"Postman approval\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST review — second action — 409",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "setTimeout(() => {}, 1000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs/{{reviewRunId}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "{{reviewRunId}}",
+                "review"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"reject\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "GET dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json(); pm.test('counts', () => pm.expect(b.total).to.be.a('number')); pm.test('admin scope all', () => pm.expect(b.scope).to.eql('all'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dashboard"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "RBAC — Tester",
+      "item": [
+        {
+          "name": "POST login — tester",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{testerUsername}}\",\n  \"password\": \"{{testerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET users — Tester — 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET review queue — no review menu — 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/review/queue",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "review",
+                "queue"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET admin's run — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs/{{runId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "{{runId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET runs — logged out — 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/runs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST login — admin again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PATCH deactivate tester (cleanup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{testerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{testerId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Token cost: every 200 from route / select / generate / evaluate carries usage.",
+          "if (pm.response.code === 200 && ['/api/analyze/route', '/api/analyze/select', '/api/scenarios/generate', '/api/scenarios/evaluate'].includes(pm.request.url.getPath())) {",
+          "  const u = pm.response.json().usage;",
+          "  pm.test('usage has model, calls and token counts', () => {",
+          "    pm.expect(u).to.be.an('object');",
+          "    pm.expect(u.model).to.be.a('string').and.not.empty;",
+          "    pm.expect(u.calls).to.be.a('number').at.least(1);",
+          "    ['inputTokens', 'outputTokens', 'totalTokens'].forEach((k) => pm.expect(u[k]).to.be.a('number').at.least(0));",
+          "  });",
+          "  pm.test('usage.costUsd is a number >= 0 or null', () => pm.expect(u.costUsd === null || u.costUsd >= 0).to.be.true);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "jobId",
+      "value": ""
+    },
+    {
+      "key": "aiJobId",
+      "value": ""
+    },
+    {
+      "key": "articleIds",
+      "value": ""
+    },
+    {
+      "key": "openaiModel",
+      "value": ""
+    },
+    {
+      "key": "anthropicModel",
+      "value": ""
+    },
+    {
+      "key": "inceptionModel",
+      "value": ""
+    },
+    {
+      "key": "unkeyedProvider",
+      "value": ""
+    },
+    {
+      "key": "scenarios",
+      "value": ""
+    },
+    {
+      "key": "e2eProvider",
+      "value": ""
+    },
+    {
+      "key": "e2eModel",
+      "value": ""
+    },
+    {
+      "key": "e1Regulations",
+      "value": ""
+    },
+    {
+      "key": "e1ArticleIds",
+      "value": ""
+    },
+    {
+      "key": "e1Scenarios",
+      "value": ""
+    },
+    {
+      "key": "e2Regulations",
+      "value": ""
+    },
+    {
+      "key": "e2ArticleIds",
+      "value": ""
+    },
+    {
+      "key": "e2Scenarios",
+      "value": ""
+    },
+    {
+      "key": "adminId",
+      "value": ""
+    },
+    {
+      "key": "testerId",
+      "value": ""
+    },
+    {
+      "key": "testerUsername",
+      "value": ""
+    },
+    {
+      "key": "runProvider",
+      "value": ""
+    },
+    {
+      "key": "runModel",
+      "value": ""
+    },
+    {
+      "key": "jevKeyed",
+      "value": ""
+    },
+    {
+      "key": "runId",
+      "value": ""
+    },
+    {
+      "key": "reviewRunId",
+      "value": ""
+    },
+    {
+      "key": "reviewStatus",
+      "value": ""
+    },
+    {
+      "key": "polls",
+      "value": ""
+    }
+  ]
+}

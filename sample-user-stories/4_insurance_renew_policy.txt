@@ -1,0 +1,11 @@
+Renew Policy
+
+As a policyholder
+I want to renew my insurance policy before it expires
+So that my coverage continues without a lapse
+
+Acceptance Criteria:
+- Given my policy is nearing expiry (e.g., within 30 days), when I log in, then I see a renewal reminder with premium amount due
+- Given I choose to renew, when I complete payment, then the policy is extended and a new policy document/receipt is generated
+- Given I don't renew before expiry, when the grace period lapses, then the policy status changes to "Lapsed" and I'm notified of reinstatement options
+- Given my risk profile changed (e.g., new vehicle details, health disclosure), when I renew, then I can update relevant details before final premium calculation

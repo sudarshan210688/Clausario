@@ -1,0 +1,10 @@
+Block/Freeze Debit Card
+
+As a bank customer
+I want to instantly block my debit card from the app
+So that I can prevent fraud if my card is lost or stolen
+
+Acceptance Criteria:
+- Given I select a card, when I tap "Block Card" and confirm, then the card is deactivated within seconds and no further transactions are approved
+- Given a card is blocked, when I view my card list, then its status clearly shows "Blocked" with a timestamp
+- Given a card is blocked, when I want to use it again, then I can request a replacement or (if temp-locked) unblock it via OTP verification
